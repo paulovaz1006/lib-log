@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
 import {v4 as uuid} from "uuid";
 
 @Entity()
-export class LogEntity {
+export default class LogEntity {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
@@ -15,7 +15,7 @@ export class LogEntity {
     @Column()
     date: Date;
 
-    constructor(log: string, type: string = "log") {
+    constructor(log: string = "Log not informed", type: string = "log") {
         this.date = new Date();
         this.type = type;
         this.log = log;

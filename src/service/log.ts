@@ -1,11 +1,11 @@
 import fs from 'fs';
 import path from 'path';
-import { LogEntity } from "../entity/LogEntity"
+import LogEntity from "../entity/LogEntity"
 import { AppDataSource } from '../data-source';
 
 class Log {
   private folderLog = './src/logs';
-  private fileLog = './src/logs/info.log';
+  private fileLog = '/logs/info.log';
   private srcFolderPath = path.join(__dirname, '../');
   private logFolderPath = path.join(this.srcFolderPath, 'logs'); 
 
@@ -95,38 +95,56 @@ class Log {
     return `${day}/${month}/${year} ${time}:${minutes}:${seconds}`;
   }
 
-  private async saveInfo(info: string) {
-    fs.readFile(this.fileLog, 'utf8', async (err, data) => {
-      if (err) await this.logInfo(err);
-
-      const text = data + info;
-
-      fs.writeFile(this.fileLog, text, async (err) => {
-        if (err) {
-          await this.logInfo(err);
-        } else {
-          await this.logInfo("Information recorded in the file")
-        }
-      })
+  private async clearfile() {
+    fs.writeFile(this.fileLog, '', async (err) => {
+      if (err) {
+        await this.logInfo(err);
+      }
     })
   }
 
-  async saveLog(info: string = "Log info not informed", type = "log") {
-    await this.generateFileLog()
-    await this.saveInfo("Info Log: ")
+  private async saveInfo(info: string) {
+    await this.clearfile()
+    fs.writeFile(this.fileLog, info, async (err) => {
+      if (err) {
+        await this.logInfo(err);
+      } else {
+        await this.logInfo("Information recorded in the file")
+      }
+    })
+  }
 
-    const log = new LogEntity(info, type)
-
-    await AppDataSource.manager.save(log)
-
-    const logs: any = await AppDataSource.manager.find(LogEntity)
+  private async saveInfoInFiler() {
+    let infoToSaveInFile: string = `Info Log: `;
+    const repositoryEntity = AppDataSource.getRepository(LogEntity)
+    const logs: any = await repositoryEntity.find()
 
     for (let i = 0; i < logs.length; i++) {
       const {type, log, date} = logs[i]
       const formatDate = await this.formatDateToPtBr(new Date(date));
       const textToSave = `\n[${formatDate}] ${type} - ${log}`
-      await this.saveInfo(textToSave)    
+      infoToSaveInFile += textToSave
     }
+
+    await this.saveInfo(infoToSaveInFile)
+  }
+
+  private async setFolderRoot(root: string) {
+    this.folderLog = `${root}/logs`
+    this.fileLog = `${root}/logs/info.log`
+  }
+
+  async saveLog(info: string = "Log info not informed", type = "log") {
+    const log = new LogEntity(info, type)
+   
+    await AppDataSource.manager.save(log)
+    await this.saveInfoInFiler()    
+  }
+
+  async configRoot(root: string) {
+    await this.setFolderRoot(root)
+    await this.generateFileLog()
+    await this.saveInfoInFiler()
   }
 }
 
