@@ -1,5 +1,7 @@
 import fs from 'fs';
 import path from 'path';
+import { LogEntity } from "../entity/LogEntity"
+import { AppDataSource } from '../data-source';
 
 class Log {
   private folderLog = './src/logs';
@@ -19,7 +21,7 @@ class Log {
         await this.logInfo("File only read")
       }
     })
-    
+
     fs.chmod(this.folderLog, 0o555, async (err) => {
       if (err) {
         await this.logInfo("Error blocked file")
@@ -111,11 +113,20 @@ class Log {
 
   async saveLog(info: string = "Log info not informed", type = "log") {
     await this.generateFileLog()
+    await this.saveInfo("Info Log: ")
 
-    const formatDate = await this.formatDateToPtBr(new Date())
-    const textToSave = `\n[${formatDate}] ${type} - ${info}`
+    const log = new LogEntity(info, type)
 
-    await this.saveInfo(textToSave)    
+    await AppDataSource.manager.save(log)
+
+    const logs: any = await AppDataSource.manager.find(LogEntity)
+
+    for (let i = 0; i < logs.length; i++) {
+      const {type, log, date} = logs[i]
+      const formatDate = await this.formatDateToPtBr(new Date(date));
+      const textToSave = `\n[${formatDate}] ${type} - ${log}`
+      await this.saveInfo(textToSave)    
+    }
   }
 }
 

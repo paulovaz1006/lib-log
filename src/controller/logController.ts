@@ -4,7 +4,7 @@ import LibLogInfo from "../service/log";
 class LogController {
   async execute(req: Request, res: Response) {
     const {payload} = req.body;
-    await LibLogInfo.saveLog("texto teste", "Warn")
+    await LibLogInfo.saveLog("texto teste", "Success")
 
     res.status(200).send("ok")
   }
